@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+
+trap(:INT) { $stderr.puts; exit }
+
+require_relative '../lib/redis'
+require_relative '../lib/unpushed_events_sender'
+
+EXPIRED_EVENT = 'expired'.freeze
+
+begin
+  redis = $redis.dup
+
+  redis.subscribe("__keyspace@0__:#{EventHandler::LAST_PUSH_KEY}") do |on|
+    on.message do |_, message|
+      UnpushedEventsSender.send_unpushed if message == EXPIRED_EVENT
+    end
+  end
+rescue Redis::BaseConnectionError => error
+  $stderr.puts "#{error}, retrying in 1s"
+  sleep 1
+  retry
+end

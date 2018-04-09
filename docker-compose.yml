@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  redis-master:
+    image: redis:4
+
+  redis-slave:
+    image: redis:4
+    command: redis-server --slaveof redis-master 6379
+    links:
+      - redis-master
+
+  nginx:
+    build: docker/nginx
+    ports:
+      - "80:80"
+    links:
+      - web
+
+  web: &ruby
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile
+    command: "bundle exec puma -w 3 --preload -b 'tcp://0.0.0.0:9292' -v"
+    volumes:
+      - '.:/app'
+    expose:
+      - 9292
+    links:
+      - redis-master
+      - redis-slave
+      - netcat
+    tty: true
+    stdin_open: true
+    environment:
+      - NETCAT=netcat
+      - REDIS_MASTER=redis-master
+
+  consumer:
+    <<: *ruby
+    command: "bin/consumer"
+
+  netcat:
+    build:
+      context: .
+      dockerfile: docker/netcat/Dockerfile
+    command: 'rackup -p 80 -o 0.0.0.0 netcat.ru'
