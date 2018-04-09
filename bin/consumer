@@ -10,7 +10,7 @@ EXPIRED_EVENT = 'expired'.freeze
 begin
   redis = $redis.dup
 
-  redis.subscribe("__keyspace@0__:#{EventHandler::LAST_PUSH_KEY}") do |on|
+  redis.subscribe("__keyspace@0__:#{EventRepository::LAST_PUSH_KEY}") do |on|
     on.message do |_, message|
       UnpushedEventsSender.send_unpushed if message == EXPIRED_EVENT
     end

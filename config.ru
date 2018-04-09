@@ -1,11 +1,11 @@
 require_relative 'lib/redis'
-require_relative 'lib/event_handler'
+require_relative 'lib/event_app'
 
 # $redis.flushall # Just for testing
 
 app = Rack::Builder.new do
   map '/events' do
-    run EventHandler
+    run EventApp
   end
 end
 
